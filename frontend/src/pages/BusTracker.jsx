@@ -1,6 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Search, RefreshCw, MapPin, Navigation } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix default marker icon in react-leaflet
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+let DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41]
+});
+L.Marker.prototype.options.icon = DefaultIcon;
 
 const STATUS_LABEL = {
   in_orario:  { text: 'In orario',  cls: 'in_orario' },
@@ -195,17 +210,29 @@ export default function BusTracker() {
               {selectedStop.lat.toFixed(4)}°N, {selectedStop.lng.toFixed(4)}°E
             </div>
           </div>
-          <div style={{ background:'var(--bg-tertiary)', padding:40, textAlign:'center' }}>
-            <Navigation size={40} color="var(--primary)" style={{ margin:'0 auto 12px' }} />
-            <div style={{ fontSize:14, fontWeight:600, color:'var(--text-secondary)' }}>
-              Mappa interattiva
-            </div>
-            <div style={{ fontSize:12, color:'var(--text-muted)', marginTop:4 }}>
-              Disponibile con installazione Leaflet
-            </div>
+          <div style={{ background:'var(--bg-tertiary)' }}>
+            <MapContainer 
+              center={[selectedStop.lat, selectedStop.lng]} 
+              zoom={16} 
+              scrollWheelZoom={false}
+              key={selectedStop.id} // Re-mount when stop changes
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <Marker position={[selectedStop.lat, selectedStop.lng]}>
+                <Popup>
+                  <strong>{selectedStop.name}</strong><br/>
+                  {selectedStop.city}
+                </Popup>
+              </Marker>
+            </MapContainer>
+          </div>
+          <div style={{ padding: '16px', textAlign: 'center' }}>
             <a href={`https://maps.apple.com/?ll=${selectedStop.lat},${selectedStop.lng}&q=${encodeURIComponent(selectedStop.name)}`}
-               target="_blank" rel="noreferrer" className="btn btn-primary btn-sm" style={{ marginTop:16, display:'inline-flex' }}>
-              Apri in Mappe
+               target="_blank" rel="noreferrer" className="btn btn-outline btn-sm" style={{ display:'inline-flex' }}>
+              Apri in Apple Maps
             </a>
           </div>
         </div>
