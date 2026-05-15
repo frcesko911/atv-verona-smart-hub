@@ -31,24 +31,29 @@ app.use(helmet({
   hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
 }));
 
-// Extra origins allowed via env var (comma-separated), e.g. the deployed frontend URL
+// Origins explicitly allowed via env var (comma-separated)
 const extraOrigins = (process.env.FRONTEND_URL || '')
   .split(',').map(s => s.trim()).filter(Boolean);
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (Cordova/mobile apps, Postman, curl)
-    if (!origin) return callback(null, true);
-    // Allow any explicitly configured frontend URL
-    if (extraOrigins.some(o => origin === o)) return callback(null, true);
-    // Allow any localhost or local network IP (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
-    const localOrigin = /^(capacitor:\/\/localhost|https?:\/\/localhost(:\d+)?|https?:\/\/10\.\d+\.\d+\.\d+(:\d+)?|https?:\/\/192\.168\.\d+\.\d+(:\d+)?|https?:\/\/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+(:\d+)?)$/;
-    if (localOrigin.test(origin)) return callback(null, true);
-    callback(new Error(`CORS: origin not allowed — ${origin}`));
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
+// localhost, LAN IPs, and the Capacitor mobile app
+const localOrigin = /^(capacitor:\/\/localhost|https?:\/\/localhost(:\d+)?|https?:\/\/10\.\d+\.\d+\.\d+(:\d+)?|https?:\/\/192\.168\.\d+\.\d+(:\d+)?|https?:\/\/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+(:\d+)?)$/;
+
+app.use(cors((req, callback) => {
+  const origin = req.headers.origin;
+  // The server's own address — same-origin requests, e.g. the /admin panel
+  const selfOrigin = req.headers.host ? `${req.protocol}://${req.headers.host}` : null;
+  const allowed =
+    !origin ||                                            // mobile app, curl, server-to-server
+    origin === selfOrigin ||                              // same-origin (admin panel)
+    extraOrigins.includes(origin) ||                      // configured frontend URL
+    localOrigin.test(origin) ||                           // local dev / LAN
+    /^https:\/\/[a-z0-9-]+\.onrender\.com$/.test(origin); // Render deployment
+  callback(null, {
+    origin: allowed,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  });
 }));
 
 app.use(express.json({ limit: '10kb' })); // Prevent large payload attacks
