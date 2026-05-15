@@ -17,9 +17,9 @@ build/
 .env.test.local
 .env.production.local
 
-# Database
-backend/data/
+# Database files only (not JS data files in the same folder)
 *.db
+*.db-shm
 *.db-journal
 *.db-wal
 
