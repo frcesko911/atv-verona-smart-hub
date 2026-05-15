@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ATV Verona — Admin Panel</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f1f5f9;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --muted: #64748b;
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --danger: #dc2626;
+    --danger-dark: #b91c1c;
+    --success: #16a34a;
+    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+  [hidden] { display: none !important; }
+
+  /* Login */
+  .login-view {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #1e3a8a, #2563eb);
+    padding: 24px;
+  }
+  .login-card {
+    background: var(--card); width: 100%; max-width: 380px;
+    border-radius: 16px; padding: 40px 32px;
+    box-shadow: 0 20px 40px rgba(0,0,0,.25);
+    display: flex; flex-direction: column; gap: 14px; text-align: center;
+  }
+  .login-logo { font-size: 48px; }
+  .login-card h1 { font-size: 24px; }
+  .login-sub { color: var(--muted); font-size: 14px; margin-bottom: 6px; }
+  .login-card input {
+    padding: 12px 14px; border: 1px solid var(--border);
+    border-radius: 10px; font-size: 15px; width: 100%; font-family: inherit;
+  }
+  .login-card input:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
+  .login-error { color: #fecaca; background: transparent; color: var(--danger); font-size: 13px; min-height: 18px; }
+
+  /* Buttons */
+  .btn {
+    border: none; border-radius: 10px; padding: 10px 16px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    font-family: inherit; transition: background .15s, transform .05s;
+  }
+  .btn:active { transform: scale(.98); }
+  .btn:disabled { opacity: .6; cursor: not-allowed; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-danger:hover { background: var(--danger-dark); }
+  .btn-ghost { background: transparent; color: var(--muted); }
+  .btn-ghost:hover { background: rgba(0,0,0,.05); color: var(--text); }
+  .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+  #login-btn { background: var(--primary); color: #fff; padding: 12px; font-size: 15px; }
+  #login-btn:hover { background: var(--primary-dark); }
+
+  /* Topbar */
+  .topbar {
+    background: var(--card); border-bottom: 1px solid var(--border);
+    padding: 12px 24px; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .topbar-title { display: flex; align-items: center; gap: 12px; }
+  .topbar-logo { font-size: 26px; }
+  .topbar-title strong { display: block; font-size: 15px; }
+  .env-label { font-size: 12px; color: var(--muted); }
+  .topbar-actions { display: flex; gap: 8px; }
+
+  /* Content */
+  .content { max-width: 880px; margin: 0 auto; padding: 24px; }
+
+  /* Stats */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; box-shadow: var(--shadow);
+  }
+  .stat-value { font-size: 26px; font-weight: 700; }
+  .stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* Toolbar */
+  .toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  #search {
+    flex: 1; padding: 10px 14px; border: 1px solid var(--border);
+    border-radius: 10px; font-size: 14px; font-family: inherit;
+  }
+  #search:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
+  .user-count { font-size: 13px; color: var(--muted); white-space: nowrap; }
+
+  /* User cards */
+  .users { display: flex; flex-direction: column; gap: 10px; }
+  .user-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; box-shadow: var(--shadow); overflow: hidden;
+  }
+  .user-head { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; }
+  .user-head:hover { background: #f8fafc; }
+  .avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--primary); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; flex-shrink: 0;
+  }
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-weight: 600; font-size: 15px; }
+  .user-email { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .user-meta { display: flex; align-items: center; gap: 8px; }
+  .badge {
+    background: #eff6ff; color: var(--primary);
+    font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; white-space: nowrap;
+  }
+  .user-id { font-size: 12px; color: #94a3b8; }
+  .chevron { color: var(--muted); transition: transform .2s; }
+  .user-card.open .chevron { transform: rotate(180deg); }
+  .user-body { border-top: 1px solid var(--border); padding: 16px; background: #f8fafc; }
+
+  /* Tickets */
+  .tickets { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+  .ticket-row {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 12px;
+  }
+  .ticket-main { flex: 1; min-width: 150px; }
+  .ticket-name { font-weight: 600; font-size: 14px; }
+  .ticket-sub { font-size: 12px; color: var(--muted); }
+  .tstatus { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; }
+  .tstatus-attivo { background: #dcfce7; color: #15803d; }
+  .tstatus-validato { background: #dbeafe; color: #1d4ed8; }
+  .tstatus-scaduto { background: #f1f5f9; color: #64748b; }
+  .ticket-price { font-weight: 600; font-size: 14px; }
+  .empty { color: var(--muted); font-size: 13px; padding: 10px 0; }
+
+  /* Give-ticket form */
+  .give-form { display: flex; gap: 8px; flex-wrap: wrap; }
+  .give-form select {
+    flex: 1; min-width: 180px; padding: 8px 10px;
+    border: 1px solid var(--border); border-radius: 8px;
+    font-size: 13px; font-family: inherit; background: var(--card); color: var(--text);
+  }
+
+  /* Modal */
+  .modal {
+    position: fixed; inset: 0; background: rgba(15,23,42,.5);
+    display: flex; align-items: center; justify-content: center; z-index: 50; padding: 24px;
+  }
+  .modal-card {
+    background: var(--card); border-radius: 14px; padding: 24px;
+    max-width: 400px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,.3);
+  }
+  .modal-card p { margin-bottom: 20px; font-size: 15px; line-height: 1.5; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--text); color: #fff; padding: 12px 20px;
+    border-radius: 10px; font-size: 14px; z-index: 60;
+    box-shadow: 0 10px 25px rgba(0,0,0,.25); max-width: 90vw;
+  }
+  .toast-success { background: var(--success); }
+  .toast-error { background: var(--danger); }
+
+  @media (max-width: 640px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .content { padding: 16px; }
+    .topbar { padding: 12px 16px; }
+    .user-email { max-width: 150px; }
+  }
+</style>
+</head>
+<body>
+  <!-- Login -->
+  <div id="login-view" class="login-view" hidden>
+    <form id="login-form" class="login-card">
+      <div class="login-logo">&#128652;</div>
+      <h1>ATV Admin</h1>
+      <p class="login-sub">Pannello di gestione</p>
+      <input type="password" id="login-password" placeholder="Password amministratore" autocomplete="current-password" required />
+      <button type="submit" id="login-btn">Accedi</button>
+      <div id="login-error" class="login-error"></div>
+    </form>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard-view" hidden>
+    <header class="topbar">
+      <div class="topbar-title">
+        <span class="topbar-logo">&#128652;</span>
+        <div>
+          <strong>ATV Verona &mdash; Admin</strong>
+          <span id="env-label" class="env-label"></span>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button id="refresh-btn" class="btn btn-ghost">Aggiorna</button>
+        <button id="logout-btn" class="btn btn-ghost">Esci</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <section class="stats" id="stats"></section>
+      <div class="toolbar">
+        <input type="search" id="search" placeholder="Cerca utente per nome o email&hellip;" />
+        <span id="user-count" class="user-count"></span>
+      </div>
+      <section id="users" class="users"></section>
+    </main>
+  </div>
+
+  <!-- Confirm modal -->
+  <div id="modal" class="modal" hidden>
+    <div class="modal-card">
+      <p id="modal-message"></p>
+      <div class="modal-actions">
+        <button id="modal-cancel" class="btn btn-ghost">Annulla</button>
+        <button id="modal-confirm" class="btn btn-danger">Conferma</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

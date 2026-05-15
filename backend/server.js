@@ -1,4 +1,5 @@
 require('dotenv').config();
+const path = require('path');
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
@@ -10,6 +11,7 @@ const taskRoutes = require('./routes/tasks');
 const ticketRoutes = require('./routes/tickets');
 const busRoutes = require('./routes/bus');
 const settingsRoutes = require('./routes/settings');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -74,6 +76,10 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/bus', busRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/admin', adminRoutes);
+
+// ─── Admin Panel (static UI at /admin) ────────────────────────────────────
+app.use('/admin', express.static(path.join(__dirname, 'public')));
 
 // ─── Health Check ─────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
