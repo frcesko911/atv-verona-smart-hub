@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { api } from '../api/axios';
 import { Bus, ChevronRight, Ticket, Navigation, Clock, RefreshCw, AlertCircle, CheckSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -30,7 +30,7 @@ export default function Dashboard() {
   async function fetchArrivals(stopId) {
     setLoadingBus(true);
     try {
-      const res = await axios.get(`/api/bus/arrivals/${stopId}`);
+      const res = await api.get(`/api/bus/arrivals/${stopId}`);
       setArrivals(res.data.arrivals.slice(0, 4));
       setLastUpdate(new Date());
     } catch {
@@ -42,7 +42,7 @@ export default function Dashboard() {
 
   async function fetchTasks() {
     try {
-      const res = await axios.get('/api/tasks');
+      const res = await api.get('/api/tasks');
       setTasks(res.data.tasks.filter(t => t.status === 'in_corso').slice(0, 3));
     } catch { setTasks([]); }
   }

@@ -1,0 +1,9 @@
+{
+  "appId": "atvsmarhub.it",
+  "appName": "ATV SMART HUB",
+  "webDir": "dist",
+  "server": {
+    "cleartext": true,
+    "allowNavigation": ["10.30.11.141"]
+  }
+}

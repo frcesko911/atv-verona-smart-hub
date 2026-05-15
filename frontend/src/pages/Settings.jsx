@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from '../api/axios';
 import { User, MapPin, Bell, Key, LogOut, ChevronRight, Check, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -22,7 +22,7 @@ export default function Settings() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
-    axios.get('/api/settings').then(r => {
+    api.get('/api/settings').then(r => {
       setSettings(prev => ({ ...prev, ...(r.data.settings || {}) }));
       setLoading(false);
     });
@@ -30,7 +30,7 @@ export default function Settings() {
 
   async function save() {
     try {
-      await axios.put('/api/settings', settings);
+      await api.put('/api/settings', settings);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch { alert('Errore nel salvataggio.'); }

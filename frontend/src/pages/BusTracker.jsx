@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import { api } from '../api/axios';
 import { Search, RefreshCw, MapPin, Navigation } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
@@ -39,7 +39,7 @@ export default function BusTracker() {
 
   // Load all stops initially
   useEffect(() => {
-    axios.get('/api/bus/stops').then(r => setStops(r.data.stops));
+    api.get('/api/bus/stops').then(r => setStops(r.data.stops));
   }, []);
 
   // Filter suggestions
@@ -52,7 +52,7 @@ export default function BusTracker() {
   async function fetchArrivals(stop) {
     setLoading(true);
     try {
-      const res = await axios.get(`/api/bus/arrivals/${stop.id}`);
+      const res = await api.get(`/api/bus/arrivals/${stop.id}`);
       setArrivals(res.data.arrivals);
       setLastUpdate(new Date());
     } catch { setArrivals([]); }

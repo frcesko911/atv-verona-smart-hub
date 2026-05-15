@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { api } from '../api/axios';
 import { Plus, X, Check, Trash2, Edit3, ChevronDown, ChevronUp, Calendar, Tag } from 'lucide-react';
 
 const CATEGORIES = ['tutte', 'scuola', 'personale', 'viaggio', 'lavoro'];
@@ -181,7 +181,7 @@ export default function Tasks() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/tasks');
+      const res = await api.get('/api/tasks');
       setTasks(res.data.tasks);
     } finally { setLoading(false); }
   }, []);
@@ -189,25 +189,25 @@ export default function Tasks() {
   useEffect(() => { load(); }, [load]);
 
   async function createTask(form) {
-    await axios.post('/api/tasks', form);
+    await api.post('/api/tasks', form);
     setShowForm(false);
     load();
   }
 
   async function updateTask(form) {
-    await axios.put(`/api/tasks/${editTask.id}`, { ...editTask, ...form });
+    await api.put(`/api/tasks/${editTask.id}`, { ...editTask, ...form });
     setEditTask(null);
     load();
   }
 
   async function deleteTask(id) {
     if (!window.confirm('Eliminare questa attività?')) return;
-    await axios.delete(`/api/tasks/${id}`);
+    await api.delete(`/api/tasks/${id}`);
     load();
   }
 
   async function completeTaskFn(notes) {
-    await axios.put(`/api/tasks/${completeTask.id}`, {
+    await api.put(`/api/tasks/${completeTask.id}`, {
       ...completeTask, status: 'completato', completion_notes: notes
     });
     setCompleteTask(null);

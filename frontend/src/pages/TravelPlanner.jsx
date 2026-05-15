@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from '../api/axios';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Navigation, Calendar, Clock, ArrowRight, Bus, Ticket } from 'lucide-react';
 
@@ -14,7 +14,7 @@ export default function TravelPlanner() {
   const [searched, setSearched] = useState(false);
 
   useEffect(() => {
-    axios.get('/api/bus/stops').then(r => setStops(r.data.stops));
+    api.get('/api/bus/stops').then(r => setStops(r.data.stops));
   }, []);
 
   function filterStops(q) {
@@ -27,7 +27,7 @@ export default function TravelPlanner() {
     if (!form.fromId || !form.toId) return;
     setLoading(true); setSearched(true);
     try {
-      const res = await axios.get(`/api/bus/plan?from=${form.fromId}&to=${form.toId}`);
+      const res = await api.get(`/api/bus/plan?from=${form.fromId}&to=${form.toId}`);
       setRoutes(res.data.routes);
     } catch { setRoutes([]); }
     finally { setLoading(false); }

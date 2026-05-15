@@ -14,6 +14,8 @@ const settingsRoutes = require('./routes/settings');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+app.set('trust proxy', 1);
+
 // ─── Security Middleware ───────────────────────────────────────────────────
 app.use(helmet({
   contentSecurityPolicy: {
@@ -27,15 +29,34 @@ app.use(helmet({
   hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
 }));
 
+// Extra origins allowed via env var (comma-separated), e.g. the deployed frontend URL
+const extraOrigins = (process.env.FRONTEND_URL || '')
+  .split(',').map(s => s.trim()).filter(Boolean);
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (Cordova/mobile apps, Postman, curl)
+    if (!origin) return callback(null, true);
+    // Allow any explicitly configured frontend URL
+    if (extraOrigins.some(o => origin === o)) return callback(null, true);
+    // Allow any localhost or local network IP (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+    const localOrigin = /^(capacitor:\/\/localhost|https?:\/\/localhost(:\d+)?|https?:\/\/10\.\d+\.\d+\.\d+(:\d+)?|https?:\/\/192\.168\.\d+\.\d+(:\d+)?|https?:\/\/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+(:\d+)?)$/;
+    if (localOrigin.test(origin)) return callback(null, true);
+    callback(new Error(`CORS: origin not allowed — ${origin}`));
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 }));
 
 app.use(express.json({ limit: '10kb' })); // Prevent large payload attacks
 app.use(express.urlencoded({ extended: false, limit: '10kb' }));
+
+app.use((req, res, next) => {
+  console.log("\n➡️", req.method, req.url);
+  console.log("AUTH:", req.headers.authorization);
+  next();
+});
 
 // ─── Global Rate Limiter ───────────────────────────────────────────────────
 const globalLimiter = rateLimit({
@@ -75,6 +96,6 @@ app.use((err, req, res, next) => {
 
 // ─── Start ────────────────────────────────────────────────────────────────
 initDatabase();
-app.listen(PORT, () => {
-  console.log(`✅ ATV Backend avviato su http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
 });

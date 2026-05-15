@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: atv-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: JWT_EXPIRES_IN
+        value: 24h
+      - key: DB_PATH
+        value: /opt/render/project/src/data/atv.db
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: ""  # fill in after deploy if you have a web frontend

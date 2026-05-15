@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from '../api/axios';
 import { Search, MapPin, ChevronRight, Clock } from 'lucide-react';
 
 export default function Timetables() {
@@ -13,8 +13,8 @@ export default function Timetables() {
 
   useEffect(() => {
     Promise.all([
-      axios.get('/api/bus/lines'),
-      axios.get('/api/bus/stops'),
+      api.get('/api/bus/lines'),
+      api.get('/api/bus/stops'),
     ]).then(([linesRes, stopsRes]) => {
       setLines(linesRes.data.lines);
       setStops(stopsRes.data.stops);
@@ -25,12 +25,12 @@ export default function Timetables() {
   async function selectLine(line) {
     setSelectedLine(line);
     setTab('Fermate');
-    const res = await axios.get(`/api/bus/line/${line.id}/stops`);
+    const res = await api.get(`/api/bus/line/${line.id}/stops`);
     setLineStops(res.data.stops);
 
     // Fetch arrivals for first stop
     if (res.data.stops.length > 0) {
-      const arrRes = await axios.get(`/api/bus/arrivals/${res.data.stops[0].id}`);
+      const arrRes = await api.get(`/api/bus/arrivals/${res.data.stops[0].id}`);
       const a = {};
       arrRes.data.arrivals.filter(arr => arr.lineId === line.id).forEach((arr, i) => {
         if (i < 5) a[i] = arr;

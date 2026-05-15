@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { api } from '../api/axios';
 import { QRCodeSVG } from 'qrcode.react';
 import { Ticket, ShoppingCart, Clock, CheckCircle, X, ChevronRight, Wallet } from 'lucide-react';
 
@@ -44,7 +44,7 @@ function QRModal({ ticket, onClose }) {
   async function validate() {
     setValidating(true);
     try {
-      await axios.put(`/api/tickets/${ticket.id}/validate`);
+      await api.put(`/api/tickets/${ticket.id}/validate`);
       setValidated(true);
     } catch { } finally { setValidating(false); }
   }
@@ -150,8 +150,8 @@ export default function Tickets() {
     setLoading(true);
     try {
       const [catalogRes, ticketsRes] = await Promise.all([
-        axios.get('/api/tickets/catalog'),
-        axios.get('/api/tickets'),
+        api.get('/api/tickets/catalog'),
+        api.get('/api/tickets'),
       ]);
       setCatalog(catalogRes.data.catalog);
       setMyTickets(ticketsRes.data.tickets);
@@ -163,7 +163,7 @@ export default function Tickets() {
   async function doPurchase() {
     setPurchasing(true);
     try {
-      await axios.post('/api/tickets', { ticket_type: buyingTicket.type });
+      await api.post('/api/tickets', { ticket_type: buyingTicket.type });
       setBuyingTicket(null);
       setTab('Portafoglio');
       loadData();
