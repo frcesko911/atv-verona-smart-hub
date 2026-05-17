@@ -110,17 +110,23 @@ export default function TravelPlanner() {
             )}
           </div>
 
-          {/* Date / Time */}
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+          {/* Date / Time — stacked so the native pickers never overlap */}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:12 }}>
             <div className="form-group">
               <label className="form-label">Data</label>
-              <input className="form-input" type="date"
-                value={form.date} onChange={e => setForm(f=>({...f,date:e.target.value}))} />
+              <div style={{ position:'relative', minWidth:0 }}>
+                <Calendar size={16} style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', color:'var(--text-muted)', pointerEvents:'none' }} />
+                <input className="form-input" style={{ paddingLeft:38, width:'100%' }} type="date"
+                  value={form.date} onChange={e => setForm(f=>({...f,date:e.target.value}))} />
+              </div>
             </div>
             <div className="form-group">
               <label className="form-label">Ora</label>
-              <input className="form-input" type="time"
-                value={form.time} onChange={e => setForm(f=>({...f,time:e.target.value}))} />
+              <div style={{ position:'relative', minWidth:0 }}>
+                <Clock size={16} style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', color:'var(--text-muted)', pointerEvents:'none' }} />
+                <input className="form-input" style={{ paddingLeft:38, width:'100%' }} type="time"
+                  value={form.time} onChange={e => setForm(f=>({...f,time:e.target.value}))} />
+              </div>
             </div>
           </div>
 
