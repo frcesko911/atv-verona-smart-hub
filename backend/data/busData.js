@@ -1,8 +1,16 @@
 // ATV Verona — Bus Lines & Stops Data
-// Lines extracted from official ATV timetables (urbano + extraurbano).
-// Stops limited to the geocoded set; lines reference those they touch.
+//
+// Two-tier data source:
+//  1. If backend/data/gtfs-data.json exists (written by the GTFS importer,
+//     scripts/importGtfs.js) it is used — real stops, routes & frequencies.
+//  2. Otherwise the bundled snapshot below is used as a fallback. It was
+//     extracted from the official ATV urbano + extraurbano timetables.
 
-const BUS_STOPS = [
+'use strict';
+const fs = require('fs');
+const path = require('path');
+
+const STATIC_BUS_STOPS = [
   { id: 'VR_PN_FS', name: 'Verona Porta Nuova FS', lat: 45.4295, lng: 10.9823, city: 'Verona' },
   { id: 'VR_BRA', name: 'Piazza Bra', lat: 45.4388, lng: 10.9938, city: 'Verona' },
   { id: 'VR_ERBE', name: 'Piazza Erbe', lat: 45.4423, lng: 10.9980, city: 'Verona' },
@@ -25,7 +33,7 @@ const BUS_STOPS = [
   { id: 'BOV_CENTRO', name: 'Bovolone Centro', lat: 45.2585, lng: 11.1208, city: 'Bovolone' },
 ];
 
-const BUS_LINES = [
+const STATIC_BUS_LINES = [
   { id: 'L11', number: '11', name: 'Linea 11', description: 'S.Michele Nord - P.Vescovo - p.Bra - Stazione P.N. - Chievo - S.Vito al Mantico - Bussolengo', color: '#1E5EFF', type: 'urbano', stopIds: ['VR_SANMICHELE', 'VR_BRA', 'VR_PN_FS', 'VR_CHIEVO', 'BSL_CENTRO'], frequency: 16 },
   { id: 'L12', number: '12', name: 'Linea 12', description: 'S.Michele Sud - P.Vescovo - p.Bra - Stazione P.N. - B.go Nuovo', color: '#E53E3E', type: 'urbano', stopIds: ['VR_SANMICHELE', 'VR_BRA', 'VR_PN_FS'], frequency: 17 },
   { id: 'L13', number: '13', name: 'Linea 13', description: 'Mizzole - Montorio - P.Vescovo - p.Bra - Stazione P.N. - Croce Bianca - Cason', color: '#38A169', type: 'urbano', stopIds: ['VR_BRA', 'VR_PN_FS'], frequency: 16 },
@@ -137,12 +145,53 @@ const BUS_LINES = [
   { id: 'L199', number: '199', name: 'Linea 199', description: 'Aeroporto - Verona Stazione P.N.', color: '#9333EA', type: 'aeroporto', stopIds: ['VF_AERO', 'VR_PN_FS'], frequency: 21 },
 ];
 
+// ─── Active data set ───────────────────────────────────────────────────────
+// Prefer GTFS-imported data; fall back to the bundled snapshot above.
+const GTFS_FILE = path.join(__dirname, 'gtfs-data.json');
+
+let busStops = STATIC_BUS_STOPS;
+let busLines = STATIC_BUS_LINES;
+let dataSource = 'bundled';
+
+function loadData() {
+  try {
+    if (fs.existsSync(GTFS_FILE)) {
+      const g = JSON.parse(fs.readFileSync(GTFS_FILE, 'utf8'));
+      if (Array.isArray(g.stops) && g.stops.length &&
+          Array.isArray(g.lines) && g.lines.length) {
+        busStops = g.stops;
+        busLines = g.lines;
+        dataSource = 'gtfs (' + (g.generatedAt || 'unknown date') + ')';
+        return;
+      }
+    }
+  } catch (err) {
+    console.warn('[busData] could not read gtfs-data.json:', err.message);
+  }
+  busStops = STATIC_BUS_STOPS;
+  busLines = STATIC_BUS_LINES;
+  dataSource = 'bundled';
+}
+loadData();
+
+// Re-read gtfs-data.json after an import, without restarting the server.
+function reload() {
+  loadData();
+  console.log('[busData] active source:', dataSource,
+              '—', busStops.length, 'stops,', busLines.length, 'lines');
+  return dataSource;
+}
+
+const getStops = () => busStops;
+const getLines = () => busLines;
+const getDataSource = () => dataSource;
+
 // Generate simulated real-time arrivals for a stop
 function getArrivalsForStop(stopId) {
   const now = Date.now();
   const arrivals = [];
 
-  BUS_LINES.forEach(line => {
+  busLines.forEach(line => {
     if (!line.stopIds.includes(stopId)) return;
 
     const stopIndex = line.stopIds.indexOf(stopId);
@@ -164,7 +213,7 @@ function getArrivalsForStop(stopId) {
         lineNumber: line.number,
         lineName: line.name,
         lineColor: line.color,
-        destination: BUS_STOPS.find(s => s.id === line.stopIds[line.stopIds.length - 1])?.name || '',
+        destination: busStops.find(s => s.id === line.stopIds[line.stopIds.length - 1])?.name || '',
         etaMinutes: baseEta + travelTimeToStop + delayMinutes,
         etaTime: new Date(etaMs).toISOString(),
         delayMinutes,
@@ -178,4 +227,4 @@ function getArrivalsForStop(stopId) {
   return arrivals.slice(0, 10);
 }
 
-module.exports = { BUS_STOPS, BUS_LINES, getArrivalsForStop };
+module.exports = { getStops, getLines, getArrivalsForStop, getDataSource, reload };

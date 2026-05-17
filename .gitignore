@@ -23,6 +23,10 @@ build/
 *.db-journal
 *.db-wal
 
+# GTFS importer output (regenerated at runtime from the live feeds)
+backend/data/gtfs-data.json
+backend/data/gtfs-data.json.tmp
+
 # Logs
 npm-debug.log*
 yarn-debug.log*

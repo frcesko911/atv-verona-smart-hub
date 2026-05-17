@@ -105,8 +105,29 @@ app.use((err, req, res, next) => {
   });
 });
 
+// ─── GTFS auto-import ──────────────────────────────────────────────────────
+// When GTFS feed URLs are configured, refresh the bus dataset on boot and
+// then weekly. Runs in the background — failures never block the server,
+// which keeps serving the bundled snapshot until an import succeeds.
+function scheduleGtfsImport() {
+  if (!process.env.GTFS_URL_URBANO && !process.env.GTFS_URL_EXTRAURBANO) {
+    console.log('[gtfs] no feed URLs configured — using bundled bus data');
+    return;
+  }
+  const { importGtfs } = require('./scripts/importGtfs');
+  const busData = require('./data/busData');
+  const runImport = () => {
+    importGtfs()
+      .then(() => busData.reload())
+      .catch(err => console.warn('[gtfs] import skipped:', err.message));
+  };
+  runImport();                                       // on boot
+  setInterval(runImport, 7 * 24 * 60 * 60 * 1000);   // weekly
+}
+
 // ─── Start ────────────────────────────────────────────────────────────────
 initDatabase();
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
+  scheduleGtfsImport();
 });

@@ -1,13 +1,13 @@
 const express = require('express');
 const authMiddleware = require('../middleware/auth');
-const { BUS_LINES, BUS_STOPS, getArrivalsForStop } = require('../data/busData');
+const { getLines, getStops, getArrivalsForStop } = require('../data/busData');
 
 const router = express.Router();
 router.use(authMiddleware);
 
 // GET /api/bus/lines
 router.get('/lines', (req, res) => {
-  res.json({ lines: BUS_LINES });
+  res.json({ lines: getLines() });
 });
 
 // GET /api/bus/stops
@@ -15,12 +15,12 @@ router.get('/stops', (req, res) => {
   const { q } = req.query;
   if (q && typeof q === 'string' && q.length > 0) {
     const query = q.toLowerCase().slice(0, 60); // limit query length
-    const filtered = BUS_STOPS.filter(s =>
+    const filtered = getStops().filter(s =>
       s.name.toLowerCase().includes(query)
     );
     return res.json({ stops: filtered.slice(0, 20) });
   }
-  res.json({ stops: BUS_STOPS });
+  res.json({ stops: getStops() });
 });
 
 // GET /api/bus/arrivals/:stopId
@@ -31,7 +31,7 @@ router.get('/arrivals/:stopId', (req, res) => {
     return res.status(400).json({ error: 'ID fermata non valido.' });
   }
 
-  const stop = BUS_STOPS.find(s => s.id === stopId);
+  const stop = getStops().find(s => s.id === stopId);
   if (!stop) return res.status(404).json({ error: 'Fermata non trovata.' });
 
   const arrivals = getArrivalsForStop(stopId);
@@ -45,10 +45,10 @@ router.get('/line/:lineId/stops', (req, res) => {
     return res.status(400).json({ error: 'ID linea non valido.' });
   }
 
-  const line = BUS_LINES.find(l => l.id === lineId);
+  const line = getLines().find(l => l.id === lineId);
   if (!line) return res.status(404).json({ error: 'Linea non trovata.' });
 
-  const stops = line.stopIds.map(id => BUS_STOPS.find(s => s.id === id)).filter(Boolean);
+  const stops = line.stopIds.map(id => getStops().find(s => s.id === id)).filter(Boolean);
   res.json({ line, stops });
 });
 
@@ -60,12 +60,12 @@ router.get('/plan', (req, res) => {
     return res.status(400).json({ error: 'ID fermata non valido.' });
   }
 
-  const fromStop = BUS_STOPS.find(s => s.id === from);
-  const toStop = BUS_STOPS.find(s => s.id === to);
+  const fromStop = getStops().find(s => s.id === from);
+  const toStop = getStops().find(s => s.id === to);
   if (!fromStop || !toStop) return res.status(404).json({ error: 'Fermata non trovata.' });
 
   // Demo route planning — find a line connecting both stops
-  const directLine = BUS_LINES.find(l =>
+  const directLine = getLines().find(l =>
     l.stopIds.includes(from) && l.stopIds.includes(to)
   );
 
