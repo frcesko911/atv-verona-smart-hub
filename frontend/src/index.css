@@ -448,6 +448,18 @@ img { display: block; max-width: 100%; }
 
 .form-input::placeholder { color: var(--text-muted); }
 
+/* iOS/WebKit renders native date & time values centred and vertically
+   off — left-align them so they match the other text inputs. */
+.form-input[type="date"],
+.form-input[type="time"] {
+  text-align: left;
+}
+.form-input[type="date"]::-webkit-date-and-time-value,
+.form-input[type="time"]::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
+}
+
 .form-textarea {
   height: 100px;
   padding: 12px 14px;

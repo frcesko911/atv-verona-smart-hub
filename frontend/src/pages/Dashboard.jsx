@@ -23,12 +23,13 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [arrivals, setArrivals] = useState([]);
   const [tasks, setTasks] = useState([]);
-  const [loadingBus, setLoadingBus] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [selectedStop, setSelectedStop] = useState('VR_PN_FS');
   const [lastUpdate, setLastUpdate] = useState(null);
 
+  // Refresh arrivals in place — no full-page loading state, so the layout
+  // never reflows on the 30s auto-refresh (only the cards' content updates).
   async function fetchArrivals(stopId) {
-    setLoadingBus(true);
     try {
       const res = await api.get(`/api/bus/arrivals/${stopId}`);
       setArrivals(res.data.arrivals.slice(0, 4));
@@ -36,7 +37,7 @@ export default function Dashboard() {
     } catch {
       setArrivals([]);
     } finally {
-      setLoadingBus(false);
+      setInitialLoad(false);
     }
   }
 
@@ -158,7 +159,9 @@ export default function Dashboard() {
             ))}
           </div>
 
-          {loadingBus ? (
+          {/* Fixed min-height keeps the page stable while the list refreshes */}
+          <div style={{ minHeight: 280 }}>
+          {initialLoad ? (
             <div className="loading-screen"><div className="spinner" /></div>
           ) : arrivals.length === 0 ? (
             <div className="empty-state" style={{ padding:'24px 0' }}>
@@ -196,6 +199,7 @@ export default function Dashboard() {
               })}
             </div>
           )}
+          </div>
 
           {lastUpdate && (
             <p style={{ fontSize:11, color:'var(--text-muted)', textAlign:'right', marginTop:8 }}>

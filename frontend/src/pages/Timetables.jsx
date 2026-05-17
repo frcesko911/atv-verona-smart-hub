@@ -39,44 +39,66 @@ export default function Timetables() {
     }
   }
 
-  const LINE_TYPES = { urbano:'Urbano', suburbano:'Suburbano', aeroporto:'Aeroporto' };
+  const LINE_TYPES = { urbano:'Urbano', extraurbano:'Extraurbano', aeroporto:'Aeroporto' };
+  const TYPE_ORDER = [
+    { key:'urbano',      label:'🚌 Linee urbane' },
+    { key:'extraurbano', label:'🚍 Linee extraurbane' },
+    { key:'aeroporto',   label:'✈️ Linee aeroporto' },
+  ];
+
+  const tabs = ['Linee', selectedLine ? 'Fermate' : null].filter(Boolean);
 
   return (
     <div className="page-pad stack stack-lg">
-      <div className="tab-bar">
-        {['Linee', selectedLine ? 'Fermate' : null].filter(Boolean).map(t => (
-          <button key={t} className={`tab-item${tab===t?' active':''}`} onClick={() => setTab(t)}>{t}</button>
-        ))}
-      </div>
+      {/* Only show the tab bar once there is more than one tab to switch between */}
+      {tabs.length > 1 && (
+        <div className="tab-bar">
+          {tabs.map(t => (
+            <button key={t} className={`tab-item${tab===t?' active':''}`}
+              style={{ flex:1 }} onClick={() => setTab(t)}>{t}</button>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <div className="loading-screen"><div className="spinner"/></div>
       ) : tab === 'Linee' ? (
-        <div className="stack stack-sm">
-          {lines.map(line => (
-            <button key={line.id} className="card" style={{ width:'100%', textAlign:'left', cursor:'pointer', border:'none', display:'flex', alignItems:'center', gap:14 }}
-              onClick={() => selectLine(line)}
-              onMouseOver={e => e.currentTarget.style.transform='translateX(4px)'}
-              onMouseOut={e => e.currentTarget.style.transform=''}>
-              <div className="bus-line-badge" style={{ background: line.color, flexShrink:0 }}>
-                {line.number}
-              </div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:15, fontWeight:700 }}>{line.name}</div>
-                <div style={{ fontSize:13, color:'var(--text-muted)', marginTop:3 }}>{line.description}</div>
-                <div className="row row-gap-sm" style={{ marginTop:6 }}>
-                  <span className="badge" style={{ background:'var(--bg-secondary)', color:'var(--text-secondary)', fontSize:11 }}>
-                    {LINE_TYPES[line.type] || line.type}
-                  </span>
-                  <span style={{ fontSize:12, color:'var(--text-muted)' }}>
-                    <Clock size={11} style={{ display:'inline', marginRight:3 }}/>
-                    ogni {line.frequency} min
-                  </span>
+        <div className="stack stack-lg">
+          {TYPE_ORDER.map(group => {
+            const groupLines = lines.filter(l => l.type === group.key);
+            if (groupLines.length === 0) return null;
+            return (
+              <div key={group.key}>
+                <div className="section-title" style={{ marginBottom:12 }}>{group.label}</div>
+                <div className="stack stack-sm">
+                  {groupLines.map(line => (
+                    <button key={line.id} className="card" style={{ width:'100%', textAlign:'left', cursor:'pointer', border:'none', display:'flex', alignItems:'center', gap:14 }}
+                      onClick={() => selectLine(line)}
+                      onMouseOver={e => e.currentTarget.style.transform='translateX(4px)'}
+                      onMouseOut={e => e.currentTarget.style.transform=''}>
+                      <div className="bus-line-badge" style={{ background: line.color, flexShrink:0 }}>
+                        {line.number}
+                      </div>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontSize:15, fontWeight:700 }}>{line.name}</div>
+                        <div style={{ fontSize:13, color:'var(--text-muted)', marginTop:3 }}>{line.description}</div>
+                        <div className="row row-gap-sm" style={{ marginTop:6 }}>
+                          <span className="badge" style={{ background:'var(--bg-secondary)', color:'var(--text-secondary)', fontSize:11 }}>
+                            {LINE_TYPES[line.type] || line.type}
+                          </span>
+                          <span style={{ fontSize:12, color:'var(--text-muted)' }}>
+                            <Clock size={11} style={{ display:'inline', marginRight:3 }}/>
+                            ogni {line.frequency} min
+                          </span>
+                        </div>
+                      </div>
+                      <ChevronRight size={16} color="var(--text-muted)"/>
+                    </button>
+                  ))}
                 </div>
               </div>
-              <ChevronRight size={16} color="var(--text-muted)"/>
-            </button>
-          ))}
+            );
+          })}
         </div>
       ) : selectedLine && (
         <div className="stack stack-lg">

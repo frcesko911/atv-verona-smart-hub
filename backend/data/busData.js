@@ -20,6 +20,8 @@ const BUS_STOPS = [
   { id: 'LGN_CENTRO', name: 'Legnago Centro', lat: 45.1941, lng: 11.3098, city: 'Legnago' },
   { id: 'VR_ARSENALE', name: 'Arsenale - Rigaste', lat: 45.4482, lng: 10.9888, city: 'Verona' },
   { id: 'VR_FILIPPINI', name: 'Filippini - Via Carducci', lat: 45.4389, lng: 10.9862, city: 'Verona' },
+  { id: 'ISC_CENTRO', name: 'Isola della Scala Centro', lat: 45.2730, lng: 11.0050, city: 'Isola della Scala' },
+  { id: 'BOV_CENTRO', name: 'Bovolone Centro', lat: 45.2585, lng: 11.1208, city: 'Bovolone' },
 ];
 
 const BUS_LINES = [
@@ -59,7 +61,7 @@ const BUS_LINES = [
     name: 'Linea 21',
     description: 'Verona ↔ Bussolengo',
     color: '#D69E2E',
-    type: 'suburbano',
+    type: 'extraurbano',
     stopIds: ['VR_PN_FS', 'VR_STADIO', 'VR_CHIEVO', 'BSL_FS', 'BSL_CENTRO'],
     frequency: 20,
   },
@@ -79,9 +81,19 @@ const BUS_LINES = [
     name: 'Linea 51',
     description: 'Verona ↔ Legnago',
     color: '#DD6B20',
-    type: 'suburbano',
+    type: 'extraurbano',
     stopIds: ['VR_PN_FS', 'VR_SANMICHELE', 'VR_POLICLINICO', 'LGN_CENTRO', 'LGN_FS'],
     frequency: 30,
+  },
+  {
+    id: 'L164',
+    number: '164',
+    name: 'Linea 164',
+    description: 'Verona ↔ Isola della Scala ↔ Bovolone ↔ Legnago',
+    color: '#0D9488',
+    type: 'extraurbano',
+    stopIds: ['VR_PN_FS', 'VR_SANMICHELE', 'ISC_CENTRO', 'BOV_CENTRO', 'LGN_CENTRO', 'LGN_FS'],
+    frequency: 45,
   },
 ];
 
