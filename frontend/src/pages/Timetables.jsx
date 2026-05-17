@@ -10,6 +10,7 @@ export default function Timetables() {
   const [tab, setTab] = useState('Linee');
   const [loading, setLoading] = useState(true);
   const [arrivals, setArrivals] = useState({});
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     Promise.all([
@@ -48,6 +49,15 @@ export default function Timetables() {
 
   const tabs = ['Linee', selectedLine ? 'Fermate' : null].filter(Boolean);
 
+  // Filter lines by number, name or destination
+  const q = query.trim().toLowerCase();
+  const visibleLines = q
+    ? lines.filter(l =>
+        l.number.toLowerCase().includes(q) ||
+        l.name.toLowerCase().includes(q) ||
+        (l.description || '').toLowerCase().includes(q))
+    : lines;
+
   return (
     <div className="page-pad stack stack-lg">
       {/* Only show the tab bar once there is more than one tab to switch between */}
@@ -64,8 +74,24 @@ export default function Timetables() {
         <div className="loading-screen"><div className="spinner"/></div>
       ) : tab === 'Linee' ? (
         <div className="stack stack-lg">
-          {TYPE_ORDER.map(group => {
-            const groupLines = lines.filter(l => l.type === group.key);
+          {/* Search */}
+          <div style={{ position:'relative' }}>
+            <Search size={16} style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', color:'var(--text-muted)', pointerEvents:'none' }} />
+            <input className="form-input" style={{ paddingLeft:42 }}
+              placeholder="Cerca linea (numero o destinazione)..."
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+            />
+          </div>
+
+          {visibleLines.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">🔍</div>
+              <div className="empty-title">Nessuna linea trovata</div>
+              <div className="empty-subtitle">Prova con un altro numero o destinazione.</div>
+            </div>
+          ) : TYPE_ORDER.map(group => {
+            const groupLines = visibleLines.filter(l => l.type === group.key);
             if (groupLines.length === 0) return null;
             return (
               <div key={group.key}>
