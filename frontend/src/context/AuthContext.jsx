@@ -70,16 +70,17 @@ export function AuthProvider({ children }) {
   }, []);
 
   // 📝 REGISTER
-  const register = useCallback(async (name, email, password) => {
-    const res = await api.post('/api/auth/register', {
-      name,
-      email,
-      password
-    });
-
+  const register = useCallback(async (firstName, lastName, email, password) => {
+    const res = await api.post('/api/auth/register', { firstName, lastName, email, password });
     setToken(res.data.token);
     setUser(res.data.user);
+    return res.data;
+  }, []);
 
+  // ✏️ UPDATE PROFILE
+  const updateProfile = useCallback(async (name, email) => {
+    const res = await api.put('/api/auth/me', { name, email });
+    setUser(res.data.user);
     return res.data;
   }, []);
 
@@ -97,6 +98,7 @@ export function AuthProvider({ children }) {
         loading,
         login,
         register,
+        updateProfile,
         logout
       }}
     >

@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api/axios';
-import { User, MapPin, Bell, Key, LogOut, ChevronRight, Check, Eye, EyeOff } from 'lucide-react';
+import { User, MapPin, Bell, LogOut, ChevronRight, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+
+// Names: letters (incl. accents), spaces, hyphens, apostrophes — no digits/symbols
+const NAME_REGEX = /^[\p{L}][\p{L} '-]*$/u;
 
 const STOPS_PREVIEW = [
   { id:'VR_PN_FS', name:'Verona Porta Nuova FS' },
@@ -13,13 +16,17 @@ const STOPS_PREVIEW = [
 ];
 
 export default function Settings() {
-  const { user, logout } = useAuth();
-  const [settings, setSettings] = useState({ home_stop_id: '', notifications_enabled: true, language: 'it', api_key_atv: '' });
+  const { user, logout, updateProfile } = useAuth();
+  const [settings, setSettings] = useState({ home_stop_id: '', notifications_enabled: true, language: 'it' });
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [showKey, setShowKey] = useState(false);
-  const [testResult, setTestResult] = useState(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const [profileName, setProfileName] = useState(user?.name || '');
+  const [profileEmail, setProfileEmail] = useState(user?.email || '');
+  const [profileSaved, setProfileSaved] = useState(false);
+  const [profileError, setProfileError] = useState('');
+  const [profileSaving, setProfileSaving] = useState(false);
 
   useEffect(() => {
     api.get('/api/settings').then(r => {
@@ -36,11 +43,26 @@ export default function Settings() {
     } catch { alert('Errore nel salvataggio.'); }
   }
 
-  async function testApiKey() {
-    setTestResult('testing');
-    // Simulate API key test
-    await new Promise(r => setTimeout(r, 1200));
-    setTestResult(settings.api_key_atv ? 'success' : 'empty');
+  async function saveProfile() {
+    setProfileError('');
+    const name = profileName.trim();
+    const email = profileEmail.trim();
+    if (!NAME_REGEX.test(name) || name.length < 2 || name.length > 101) {
+      return setProfileError('Il nome può contenere solo lettere, spazi, trattini e apostrofi (2-101 caratteri).');
+    }
+    if (!email || !email.includes('@')) {
+      return setProfileError('Inserisci un indirizzo email valido.');
+    }
+    setProfileSaving(true);
+    try {
+      await updateProfile(name, email);
+      setProfileSaved(true);
+      setTimeout(() => setProfileSaved(false), 2000);
+    } catch (err) {
+      setProfileError(err.response?.data?.error || 'Errore durante l\'aggiornamento.');
+    } finally {
+      setProfileSaving(false);
+    }
   }
 
   if (loading) return <div className="loading-screen"><div className="spinner"/></div>;
@@ -58,6 +80,36 @@ export default function Settings() {
             <div style={{ fontSize:13, opacity:0.85 }}>{user?.email}</div>
           </div>
         </div>
+      </div>
+
+      {/* Personal Data */}
+      <div className="card">
+        <div className="row row-gap-sm" style={{ marginBottom:14 }}>
+          <User size={18} color="var(--primary)"/>
+          <span style={{ fontSize:16, fontWeight:700 }}>Dati personali</span>
+        </div>
+        <div className="form-group">
+          <label className="form-label">Nome</label>
+          <input className="form-input" type="text"
+            placeholder="Il tuo nome"
+            value={profileName}
+            onChange={e => setProfileName(e.target.value)} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Email</label>
+          <input className="form-input" type="email"
+            placeholder="nome@esempio.it"
+            value={profileEmail}
+            onChange={e => setProfileEmail(e.target.value)} />
+        </div>
+        {profileError && <p className="form-error" style={{ marginBottom:10 }}>⚠️ {profileError}</p>}
+        <button className="btn btn-primary btn-full" onClick={saveProfile} disabled={profileSaving}>
+          {profileSaving
+            ? <span className="spinner" style={{ width:20, height:20, borderWidth:2 }} />
+            : profileSaved
+              ? <><Check size={18}/> Salvato!</>
+              : 'Salva dati personali'}
+        </button>
       </div>
 
       {/* Home Stop */}
@@ -96,37 +148,6 @@ export default function Settings() {
             <div style={{ width:22, height:22, borderRadius:'50%', background:'white', position:'absolute', top:3, left: settings.notifications_enabled ? 25 : 3, transition:'left 0.2s', boxShadow:'0 1px 4px rgba(0,0,0,0.2)' }}/>
           </button>
         </div>
-      </div>
-
-      {/* API Key */}
-      <div className="card">
-        <div className="row row-gap-sm" style={{ marginBottom:14 }}>
-          <Key size={18} color="var(--primary)"/>
-          <span style={{ fontSize:16, fontWeight:700 }}>Chiave API ATV</span>
-        </div>
-        <div className="form-group" style={{ marginBottom:10 }}>
-          <div style={{ position:'relative' }}>
-            <input className="form-input" style={{ paddingRight:48 }}
-              type={showKey ? 'text' : 'password'}
-              placeholder="Inserisci la tua chiave API ATV..."
-              value={settings.api_key_atv || ''}
-              onChange={e => setSettings(s => ({...s, api_key_atv: e.target.value}))} />
-            <button type="button" onClick={() => setShowKey(v=>!v)}
-              style={{ position:'absolute', right:14, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)' }}>
-              {showKey ? <EyeOff size={16}/> : <Eye size={16}/>}
-            </button>
-          </div>
-        </div>
-        <div className="row row-gap-sm">
-          <button className="btn btn-ghost btn-sm" onClick={testApiKey} disabled={testResult === 'testing'}>
-            {testResult === 'testing' ? 'Test...' : 'Testa connessione'}
-          </button>
-          {testResult === 'success' && <span style={{ fontSize:13, color:'var(--success)', fontWeight:600 }}>✅ Connessa</span>}
-          {testResult === 'empty' && <span style={{ fontSize:13, color:'var(--warning)', fontWeight:600 }}>⚠️ Chiave mancante</span>}
-        </div>
-        <p style={{ fontSize:12, color:'var(--text-muted)', marginTop:10 }}>
-          Opzionale. Usa dati demo se non disponibile. La chiave viene archiviata in modo sicuro.
-        </p>
       </div>
 
       {/* Save */}

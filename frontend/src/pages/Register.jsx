@@ -3,9 +3,12 @@ import { Link } from 'react-router-dom';
 import { User, Mail, Lock, Eye, EyeOff, Bus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+// Names: letters (incl. accents), spaces, hyphens, apostrophes — no digits/symbols
+const NAME_REGEX = /^[\p{L}][\p{L} '-]*$/u;
+
 export default function Register() {
   const { register } = useAuth();
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '' });
   const [showPwd, setShowPwd] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -13,12 +16,17 @@ export default function Register() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
+    const firstName = form.firstName.trim();
+    const lastName = form.lastName.trim();
+    if (!NAME_REGEX.test(firstName) || !NAME_REGEX.test(lastName)) {
+      return setError('Nome e cognome possono contenere solo lettere, spazi, trattini e apostrofi.');
+    }
     if (form.password !== form.confirmPassword) {
       return setError('Le password non corrispondono.');
     }
     setLoading(true);
     try {
-      await register(form.name, form.email, form.password);
+      await register(firstName, lastName, form.email, form.password);
     } catch (err) {
       setError(err.response?.data?.error || 'Errore durante la registrazione.');
     } finally {
@@ -39,13 +47,24 @@ export default function Register() {
 
         <form onSubmit={handleSubmit} className="stack stack-md">
           <div className="form-group">
-            <label className="form-label">Nome completo</label>
+            <label className="form-label">Nome</label>
             <div style={{ position:'relative' }}>
               <User size={16} style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', color:'var(--text-muted)' }} />
               <input className="form-input" style={{ paddingLeft:40 }} type="text"
-                placeholder="Mario Rossi" value={form.name}
-                onChange={e => setForm(f => ({...f, name: e.target.value}))}
-                required minLength={2} maxLength={50} autoComplete="name" />
+                placeholder="Mario" value={form.firstName}
+                onChange={e => setForm(f => ({...f, firstName: e.target.value}))}
+                required minLength={2} maxLength={50} autoComplete="given-name" />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Cognome</label>
+            <div style={{ position:'relative' }}>
+              <User size={16} style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', color:'var(--text-muted)' }} />
+              <input className="form-input" style={{ paddingLeft:40 }} type="text"
+                placeholder="Rossi" value={form.lastName}
+                onChange={e => setForm(f => ({...f, lastName: e.target.value}))}
+                required minLength={2} maxLength={50} autoComplete="family-name" />
             </div>
           </div>
 

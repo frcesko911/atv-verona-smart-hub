@@ -21,28 +21,25 @@ router.put('/', [
   body('home_stop_id').optional({ nullable: true }).trim().isLength({ max: 20 }).escape(),
   body('notifications_enabled').optional().isBoolean(),
   body('language').optional().isIn(['it', 'en']),
-  body('api_key_atv').optional({ nullable: true }).trim().isLength({ max: 100 }).escape(),
 ], (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ error: errors.array()[0].msg });
 
-  const { home_stop_id, notifications_enabled, language, api_key_atv } = req.body;
+  const { home_stop_id, notifications_enabled, language } = req.body;
   const db = getDb();
 
   db.prepare(
-    `INSERT INTO user_settings (user_id, home_stop_id, notifications_enabled, language, api_key_atv)
-     VALUES (?, ?, ?, ?, ?)
+    `INSERT INTO user_settings (user_id, home_stop_id, notifications_enabled, language)
+     VALUES (?, ?, ?, ?)
      ON CONFLICT(user_id) DO UPDATE SET
        home_stop_id = excluded.home_stop_id,
        notifications_enabled = excluded.notifications_enabled,
-       language = excluded.language,
-       api_key_atv = excluded.api_key_atv`
+       language = excluded.language`
   ).run(
     req.userId,
     home_stop_id ?? null,
     notifications_enabled !== undefined ? (notifications_enabled ? 1 : 0) : 1,
     language ?? 'it',
-    api_key_atv ?? null,
   );
 
   res.json({ success: true });

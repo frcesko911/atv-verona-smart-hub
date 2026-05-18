@@ -7,6 +7,9 @@ const { getDb } = require('../db/database');
 
 const router = express.Router();
 
+// Names: letters (incl. accents), spaces, hyphens, apostrophes — no digits/symbols
+const NAME_REGEX = /^[\p{L}][\p{L} '-]*$/u;
+
 // Strict rate limit for auth routes — 5 attempts per 15 min
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -18,8 +21,14 @@ const authLimiter = rateLimit({
 });
 
 const registerValidation = [
-  body('name').trim().isLength({ min: 2, max: 50 }).escape()
-    .withMessage('Il nome deve essere tra 2 e 50 caratteri.'),
+  body('firstName').trim().isLength({ min: 2, max: 50 })
+    .withMessage('Il nome deve essere tra 2 e 50 caratteri.')
+    .matches(NAME_REGEX)
+    .withMessage('Il nome può contenere solo lettere, spazi, trattini e apostrofi.'),
+  body('lastName').trim().isLength({ min: 2, max: 50 })
+    .withMessage('Il cognome deve essere tra 2 e 50 caratteri.')
+    .matches(NAME_REGEX)
+    .withMessage('Il cognome può contenere solo lettere, spazi, trattini e apostrofi.'),
   body('email').isEmail().normalizeEmail()
     .withMessage('Indirizzo email non valido.'),
   body('password')
@@ -41,7 +50,8 @@ router.post('/register', authLimiter, registerValidation, async (req, res) => {
     return res.status(400).json({ error: errors.array()[0].msg });
   }
 
-  const { name, email, password } = req.body;
+  const { firstName, lastName, email, password } = req.body;
+  const name = `${firstName} ${lastName}`;
   const db = getDb();
 
   try {
@@ -126,6 +136,42 @@ router.get('/me', require('../middleware/auth'), (req, res) => {
 
   if (!user) return res.status(404).json({ error: 'Utente non trovato.' });
   res.json({ user });
+});
+
+// PUT /api/auth/me
+router.put('/me', require('../middleware/auth'), [
+  body('name').trim().isLength({ min: 2, max: 101 })
+    .withMessage('Il nome deve essere tra 2 e 101 caratteri.')
+    .matches(NAME_REGEX)
+    .withMessage('Il nome può contenere solo lettere, spazi, trattini e apostrofi.'),
+  body('email').isEmail().normalizeEmail()
+    .withMessage('Indirizzo email non valido.'),
+], (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ error: errors.array()[0].msg });
+  }
+
+  const { name, email } = req.body;
+  const db = getDb();
+
+  try {
+    const existing = db.prepare(
+      'SELECT id FROM users WHERE email = ? AND id != ?'
+    ).get(email, req.userId);
+    if (existing) {
+      return res.status(409).json({ error: 'Email già registrata.' });
+    }
+
+    db.prepare(
+      'UPDATE users SET name = ?, email = ? WHERE id = ?'
+    ).run(name, email, req.userId);
+
+    res.json({ user: { id: req.userId, name, email } });
+  } catch (err) {
+    console.error('[update profile]', err.message);
+    res.status(500).json({ error: 'Errore durante l\'aggiornamento del profilo.' });
+  }
 });
 
 module.exports = router;

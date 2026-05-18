@@ -51,7 +51,6 @@ function initDatabase() {
       home_stop_id TEXT DEFAULT NULL,
       notifications_enabled INTEGER DEFAULT 1,
       language TEXT DEFAULT 'it',
-      api_key_atv TEXT DEFAULT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
