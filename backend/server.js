@@ -7,10 +7,10 @@ const rateLimit = require('express-rate-limit');
 const { initDatabase } = require('./db/database');
 
 const authRoutes = require('./routes/auth');
-const taskRoutes = require('./routes/tasks');
 const ticketRoutes = require('./routes/tickets');
 const busRoutes = require('./routes/bus');
 const settingsRoutes = require('./routes/settings');
+const favouritesRoutes = require('./routes/favourites');
 const adminRoutes = require('./routes/admin');
 
 const app = express();
@@ -77,10 +77,10 @@ app.use(globalLimiter);
 
 // ─── Routes ───────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
-app.use('/api/tasks', taskRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/bus', busRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/favourites', favouritesRoutes);
 app.use('/api/admin', adminRoutes);
 
 // ─── Admin Panel (static UI at /admin) ────────────────────────────────────

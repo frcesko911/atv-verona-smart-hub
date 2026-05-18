@@ -19,7 +19,6 @@ export function LanguageProvider({ children }) {
     const translations = {
       it: {
         'Home': 'Home',
-        'Attività': 'Attività',
         'Bus': 'Bus',
         'Biglietti': 'Biglietti',
         'Percorso': 'Percorso',
@@ -28,8 +27,6 @@ export function LanguageProvider({ children }) {
         'Buongiorno': 'Buongiorno',
         'Buon pomeriggio': 'Buon pomeriggio',
         'Buonasera': 'Buonasera',
-        'Le mie attività': 'Le mie attività',
-        'Organizza le tue giornate': 'Organizza le tue giornate',
         'Monitoraggio Bus': 'Monitoraggio Bus',
         'Partenze in tempo reale': 'Partenze in tempo reale',
         'Biglietteria': 'Biglietteria',
@@ -42,7 +39,6 @@ export function LanguageProvider({ children }) {
       },
       en: {
         'Home': 'Home',
-        'Attività': 'Tasks',
         'Bus': 'Bus',
         'Biglietti': 'Tickets',
         'Percorso': 'Journey',
@@ -51,8 +47,6 @@ export function LanguageProvider({ children }) {
         'Buongiorno': 'Good morning',
         'Buon pomeriggio': 'Good afternoon',
         'Buonasera': 'Good evening',
-        'Le mie attività': 'My tasks',
-        'Organizza le tue giornate': 'Organize your days',
         'Monitoraggio Bus': 'Bus Tracker',
         'Partenze in tempo reale': 'Real-time departures',
         'Biglietteria': 'Ticket Office',

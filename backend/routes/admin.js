@@ -86,7 +86,7 @@ router.get('/users/:id/tickets', (req, res) => {
   res.json({ tickets });
 });
 
-// DELETE /api/admin/users/:id — delete a user (cascade removes tickets/tasks/settings).
+// DELETE /api/admin/users/:id — delete a user (cascade removes tickets/settings/favourites).
 router.delete('/users/:id', (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
   if (!Number.isInteger(id) || id < 1) return res.status(400).json({ error: 'ID utente non valido.' });

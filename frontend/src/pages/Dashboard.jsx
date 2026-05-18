@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/axios';
-import { Bus, ChevronRight, Ticket, Navigation, Clock, RefreshCw, AlertCircle, CheckSquare } from 'lucide-react';
+import { Bus, Ticket, Navigation, Clock, RefreshCw, Star } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const STOPS = [
@@ -22,10 +22,11 @@ export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [arrivals, setArrivals] = useState([]);
-  const [tasks, setTasks] = useState([]);
   const [initialLoad, setInitialLoad] = useState(true);
   const [selectedStop, setSelectedStop] = useState('VR_PN_FS');
   const [lastUpdate, setLastUpdate] = useState(null);
+  const [favLines, setFavLines] = useState([]);
+  const [favLoading, setFavLoading] = useState(true);
 
   // Refresh arrivals in place — no full-page loading state, so the layout
   // never reflows on the 30s auto-refresh (only the cards' content updates).
@@ -41,30 +42,35 @@ export default function Dashboard() {
     }
   }
 
-  async function fetchTasks() {
+  async function fetchFavourites() {
     try {
-      const res = await api.get('/api/tasks');
-      setTasks(res.data.tasks.filter(t => t.status === 'in_corso').slice(0, 3));
-    } catch { setTasks([]); }
+      const res = await api.get('/api/favourites/lines');
+      setFavLines(res.data.lines);
+    } catch {
+      setFavLines([]);
+    } finally {
+      setFavLoading(false);
+    }
+  }
+
+  async function removeFavourite(lineId, e) {
+    e.stopPropagation();
+    try {
+      const res = await api.delete(`/api/favourites/lines/${lineId}`);
+      setFavLines(res.data.lines);
+    } catch {
+      // keep the current list on error
+    }
   }
 
   useEffect(() => {
     fetchArrivals(selectedStop);
-    fetchTasks();
     const interval = setInterval(() => fetchArrivals(selectedStop), 30000);
     return () => clearInterval(interval);
   }, [selectedStop]);
 
-  const todayTasks = tasks.filter(t => {
-    if (!t.due_date) return false;
-    const today = new Date().toISOString().split('T')[0];
-    return t.due_date.split('T')[0] === today;
-  });
-
-  const overdue = tasks.filter(t => {
-    if (!t.due_date) return false;
-    return new Date(t.due_date) < new Date() && t.status === 'in_corso';
-  });
+  // Favourite lines load once on mount — independent of the stop selector.
+  useEffect(() => { fetchFavourites(); }, []);
 
   return (
     <div>
@@ -105,37 +111,6 @@ export default function Dashboard() {
       </div>
 
       <div className="page-pad stack stack-lg">
-        {/* Task Summary */}
-        {(todayTasks.length > 0 || overdue.length > 0) && (
-          <div className="card" style={{ borderLeft: '3px solid var(--accent)', cursor:'pointer' }}
-               onClick={() => navigate('/attivita')}>
-            <div className="row-between">
-              <div className="row row-gap-sm">
-                <CheckSquare size={18} color="var(--primary)" />
-                <span style={{ fontWeight:700, fontSize:15 }}>Attività</span>
-              </div>
-              <ChevronRight size={16} color="var(--text-muted)" />
-            </div>
-            <div className="row row-gap-sm" style={{ marginTop:12, flexWrap:'wrap' }}>
-              {overdue.length > 0 && (
-                <div className="badge badge-alta">
-                  <AlertCircle size={11} /> {overdue.length} scadut{overdue.length===1?'a':'e'}
-                </div>
-              )}
-              {todayTasks.length > 0 && (
-                <div className="badge badge-media">
-                  {todayTasks.length} oggi
-                </div>
-              )}
-              {tasks.length > 0 && (
-                <div className="badge badge-bassa">
-                  {tasks.length} in corso
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Bus Widget */}
         <div>
           <div className="section-header">
@@ -212,6 +187,51 @@ export default function Dashboard() {
         <button className="btn btn-outline btn-full" onClick={() => navigate('/bus')}>
           <Bus size={16} /> Vedi tutte le partenze
         </button>
+
+        {/* Favourite lines */}
+        <div>
+          <div className="section-header">
+            <div className="row row-gap-sm">
+              <Star size={16} fill="var(--accent)" color="var(--accent-dark)" />
+              <span className="section-title">Linee preferite</span>
+            </div>
+          </div>
+
+          {favLoading ? null : favLines.length === 0 ? (
+            <div className="card card-ghost" onClick={() => navigate('/orari')}
+                 style={{ cursor:'pointer', textAlign:'center', padding:'22px 16px' }}>
+              <div style={{ fontSize:30, marginBottom:6 }}>⭐</div>
+              <div style={{ fontSize:13, color:'var(--text-muted)', lineHeight:1.5 }}>
+                Non hai ancora linee preferite.<br/>
+                Tocca la stella su una linea in <strong style={{ color:'var(--text-secondary)' }}>Orari</strong> per ritrovarla qui.
+              </div>
+            </div>
+          ) : (
+            <div className="stack stack-sm">
+              {favLines.map(line => (
+                <div key={line.id} className="card card-sm"
+                     onClick={() => navigate('/orari', { state: { lineId: line.id } })}
+                     style={{ display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
+                  <div className="bus-line-badge" style={{ background: line.color || 'var(--primary)', flexShrink:0 }}>
+                    {line.number}
+                  </div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:14, fontWeight:700, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                      {line.name}
+                    </div>
+                    <div style={{ fontSize:12, color:'var(--text-muted)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', marginTop:2 }}>
+                      {line.description}
+                    </div>
+                  </div>
+                  <span onClick={e => removeFavourite(line.id, e)}
+                    style={{ display:'flex', alignItems:'center', padding:6, margin:-6, flexShrink:0, cursor:'pointer' }}>
+                    <Star size={18} fill="var(--accent)" color="var(--accent-dark)" />
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

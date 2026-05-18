@@ -31,24 +31,6 @@ function initDatabase() {
       created_at TEXT DEFAULT (datetime('now'))
     );
 
-    CREATE TABLE IF NOT EXISTS tasks (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      title TEXT NOT NULL,
-      description TEXT DEFAULT '',
-      due_date TEXT DEFAULT NULL,
-      priority TEXT NOT NULL DEFAULT 'media',
-      category TEXT NOT NULL DEFAULT 'personale',
-      status TEXT NOT NULL DEFAULT 'in_corso',
-      completion_notes TEXT DEFAULT '',
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-      CHECK (priority IN ('bassa','media','alta')),
-      CHECK (category IN ('scuola','personale','viaggio','lavoro')),
-      CHECK (status IN ('in_corso','completato'))
-    );
-
     CREATE TABLE IF NOT EXISTS tickets (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -70,6 +52,14 @@ function initDatabase() {
       notifications_enabled INTEGER DEFAULT 1,
       language TEXT DEFAULT 'it',
       api_key_atv TEXT DEFAULT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS favourite_lines (
+      user_id INTEGER NOT NULL,
+      line_id TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      PRIMARY KEY (user_id, line_id),
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
   `);

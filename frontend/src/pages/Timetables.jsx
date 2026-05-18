@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { api } from '../api/axios';
-import { Search, MapPin, ChevronRight, Clock } from 'lucide-react';
+import { Search, MapPin, ChevronRight, Clock, Star } from 'lucide-react';
 
 export default function Timetables() {
+  const location = useLocation();
   const [lines, setLines] = useState([]);
   const [stops, setStops] = useState([]);
   const [selectedLine, setSelectedLine] = useState(null);
@@ -11,15 +13,23 @@ export default function Timetables() {
   const [loading, setLoading] = useState(true);
   const [arrivals, setArrivals] = useState({});
   const [query, setQuery] = useState('');
+  const [favIds, setFavIds] = useState(() => new Set());
 
   useEffect(() => {
     Promise.all([
       api.get('/api/bus/lines'),
       api.get('/api/bus/stops'),
-    ]).then(([linesRes, stopsRes]) => {
+      api.get('/api/favourites/lines'),
+    ]).then(([linesRes, stopsRes, favRes]) => {
       setLines(linesRes.data.lines);
       setStops(stopsRes.data.stops);
+      setFavIds(new Set(favRes.data.lines.map(l => l.id)));
       setLoading(false);
+
+      // Deep link: open a specific line when navigated here from the Dashboard.
+      const target = location.state?.lineId
+        && linesRes.data.lines.find(l => l.id === location.state.lineId);
+      if (target) selectLine(target);
     });
   }, []);
 
@@ -37,6 +47,18 @@ export default function Timetables() {
         if (i < 5) a[i] = arr;
       });
       setArrivals(a);
+    }
+  }
+
+  async function toggleFav(line, e) {
+    e.stopPropagation();
+    try {
+      const res = favIds.has(line.id)
+        ? await api.delete(`/api/favourites/lines/${line.id}`)
+        : await api.post('/api/favourites/lines', { lineId: line.id });
+      setFavIds(new Set(res.data.lines.map(l => l.id)));
+    } catch {
+      // leave favourites unchanged on error
     }
   }
 
@@ -118,6 +140,12 @@ export default function Timetables() {
                           </span>
                         </div>
                       </div>
+                      <span onClick={e => toggleFav(line, e)}
+                        style={{ display:'flex', alignItems:'center', padding:6, margin:-6, flexShrink:0, cursor:'pointer' }}>
+                        <Star size={19}
+                          fill={favIds.has(line.id) ? 'var(--accent)' : 'none'}
+                          color={favIds.has(line.id) ? 'var(--accent-dark)' : 'var(--text-muted)'} />
+                      </span>
                       <ChevronRight size={16} color="var(--text-muted)"/>
                     </button>
                   ))}
@@ -130,14 +158,22 @@ export default function Timetables() {
         <div className="stack stack-lg">
           {/* Line header */}
           <div className="card card-sm" style={{ background: selectedLine.color, color:'white' }}>
-            <div className="row row-gap-sm">
-              <div style={{ width:44, height:44, background:'rgba(255,255,255,0.2)', borderRadius:'var(--radius-sm)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:18 }}>
-                {selectedLine.number}
+            <div className="row">
+              <div className="row row-gap-sm" style={{ flex:1, minWidth:0 }}>
+                <div style={{ width:44, height:44, background:'rgba(255,255,255,0.2)', borderRadius:'var(--radius-sm)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:18, flexShrink:0 }}>
+                  {selectedLine.number}
+                </div>
+                <div style={{ minWidth:0 }}>
+                  <div style={{ fontWeight:700, fontSize:16 }}>{selectedLine.name}</div>
+                  <div style={{ fontSize:13, opacity:0.85 }}>{selectedLine.description}</div>
+                </div>
               </div>
-              <div>
-                <div style={{ fontWeight:700, fontSize:16 }}>{selectedLine.name}</div>
-                <div style={{ fontSize:13, opacity:0.85 }}>{selectedLine.description}</div>
-              </div>
+              <span onClick={e => toggleFav(selectedLine, e)}
+                style={{ display:'flex', alignItems:'center', padding:8, margin:-8, marginLeft:4, flexShrink:0, cursor:'pointer' }}>
+                <Star size={22}
+                  fill={favIds.has(selectedLine.id) ? 'white' : 'none'}
+                  color="white" />
+              </span>
             </div>
           </div>
 
