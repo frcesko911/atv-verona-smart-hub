@@ -88,14 +88,14 @@ export default function Settings() {
           <User size={18} color="var(--primary)"/>
           <span style={{ fontSize:16, fontWeight:700 }}>Dati personali</span>
         </div>
-        <div className="form-group">
+        <div className="form-group" style={{ marginBottom:14 }}>
           <label className="form-label">Nome</label>
           <input className="form-input" type="text"
             placeholder="Il tuo nome"
             value={profileName}
             onChange={e => setProfileName(e.target.value)} />
         </div>
-        <div className="form-group">
+        <div className="form-group" style={{ marginBottom:24 }}>
           <label className="form-label">Email</label>
           <input className="form-input" type="email"
             placeholder="nome@esempio.it"

@@ -29,7 +29,7 @@ const registerValidation = [
     .withMessage('Il cognome deve essere tra 2 e 50 caratteri.')
     .matches(NAME_REGEX)
     .withMessage('Il cognome può contenere solo lettere, spazi, trattini e apostrofi.'),
-  body('email').isEmail().normalizeEmail()
+  body('email').isEmail().normalizeEmail({ gmail_remove_dots: false })
     .withMessage('Indirizzo email non valido.'),
   body('password')
     .isLength({ min: 8 })
@@ -39,7 +39,7 @@ const registerValidation = [
 ];
 
 const loginValidation = [
-  body('email').isEmail().normalizeEmail().withMessage('Email non valida.'),
+  body('email').isEmail().normalizeEmail({ gmail_remove_dots: false }).withMessage('Email non valida.'),
   body('password').notEmpty().withMessage('Password obbligatoria.'),
 ];
 
@@ -144,7 +144,7 @@ router.put('/me', require('../middleware/auth'), [
     .withMessage('Il nome deve essere tra 2 e 101 caratteri.')
     .matches(NAME_REGEX)
     .withMessage('Il nome può contenere solo lettere, spazi, trattini e apostrofi.'),
-  body('email').isEmail().normalizeEmail()
+  body('email').isEmail().normalizeEmail({ gmail_remove_dots: false })
     .withMessage('Indirizzo email non valido.'),
 ], (req, res) => {
   const errors = validationResult(req);
