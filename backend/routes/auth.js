@@ -20,6 +20,17 @@ const authLimiter = rateLimit({
   skipSuccessfulRequests: true,
 });
 
+// Tighter limit for /register — counts ALL attempts (success and 409s)
+// so an attacker can't enumerate registered emails by probing.
+// 3 attempts per hour per IP.
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Troppi tentativi di registrazione. Riprova tra un\'ora.' },
+});
+
 const registerValidation = [
   body('firstName').trim().isLength({ min: 2, max: 50 })
     .withMessage('Il nome deve essere tra 2 e 50 caratteri.')
@@ -44,7 +55,7 @@ const loginValidation = [
 ];
 
 // POST /api/auth/register
-router.post('/register', authLimiter, registerValidation, async (req, res) => {
+router.post('/register', registerLimiter, registerValidation, async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ error: errors.array()[0].msg });
