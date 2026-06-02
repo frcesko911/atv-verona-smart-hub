@@ -35,12 +35,18 @@ app.use(helmet({
 const allowedOrigins = (process.env.FRONTEND_URL || '')
   .split(',').map(s => s.trim()).filter(Boolean);
 
-// localhost, LAN IPs, and the Capacitor mobile app — dev only
-const localOrigin = /^(capacitor:\/\/localhost|https?:\/\/localhost(:\d+)?|https?:\/\/10\.\d+\.\d+\.\d+(:\d+)?|https?:\/\/192\.168\.\d+\.\d+(:\d+)?|https?:\/\/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+(:\d+)?)$/;
+// The native Capacitor app WebView origin — always allowed (prod included).
+// A browser page can't forge a capacitor:///ionic:// Origin, so this stays
+// safe even in production.
+const appOrigin = /^(capacitor|ionic):\/\/localhost$/;
+
+// localhost and LAN IPs — dev only
+const localOrigin = /^(https?:\/\/localhost(:\d+)?|https?:\/\/10\.\d+\.\d+\.\d+(:\d+)?|https?:\/\/192\.168\.\d+\.\d+(:\d+)?|https?:\/\/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+(:\d+)?)$/;
 
 app.use(cors({
   origin: (origin, cb) => {
     if (!origin) return cb(null, true);                       // mobile app, curl, server-to-server
+    if (appOrigin.test(origin)) return cb(null, true);        // native Capacitor app
     if (allowedOrigins.includes(origin)) return cb(null, true);
     if (process.env.NODE_ENV !== 'production' && localOrigin.test(origin)) {
       return cb(null, true);                                  // local dev / LAN
